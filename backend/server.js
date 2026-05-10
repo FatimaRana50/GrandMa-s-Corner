@@ -5,57 +5,60 @@ require('dotenv').config();
 
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://localhost:3000',
-  process.env.FRONTEND_URL || 'http://localhost:3000'
-];
-
+// 🔴 CORS MUST come FIRST - before all other middleware and routes
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (mobile apps, curl, postman)
     if (!origin) return callback(null, true);
 
     const allowed = [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://grand-ma-s-corner-git-main-fatimarana50s-projects.vercel.app'
+      'https://grand-ma-s-corner-git-main-fatimarana50s-projects.vercel.app',
+      'https://grand-ma-s-corner.vercel.app'
     ];
 
+    // Check if origin is in allowed list OR matches pattern
     const isAllowed =
       allowed.includes(origin) ||
       origin.includes('grand-ma-s-corner') ||
       origin.endsWith('.vercel.app');
 
     if (isAllowed) {
-      callback(null, true); // ✅ Allow this origin
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS')); // ❌ Reject this origin
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
 }));
 
-// Enable preflight for all routes
+// Handle preflight requests for all routes
 app.options('*', cors());
 
-app.use(express.json());
+// Parse JSON bodies AFTER CORS
 app.use(express.json());
 
+// Static files
 app.use('/uploads', express.static('uploads'));
+
+// Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/ai', require('./routes/ai'));
-app.use('/uploads', express.static('uploads'));
+
+// Models
 require('./models/PasswordReset');
 
+// Health check endpoint
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('MongoDB connected');
@@ -63,8 +66,12 @@ mongoose.connect(process.env.MONGO_URI)
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`Server on port ${PORT}`));
   })
-  .catch(err => { console.error(err.message); process.exit(1); });
+  .catch(err => { 
+    console.error('MongoDB Connection Error:', err.message); 
+    process.exit(1); 
+  });
 
+// Seed database
 async function seedDatabase() {
   const MenuItem = require('./models/MenuItem');
   const User = require('./models/User');
@@ -75,16 +82,19 @@ async function seedDatabase() {
     const hash = await bcrypt.hash('admin123', 10);
     await User.create({ name: 'Admin', email: 'admin@grandmas.com', password: hash, role: 'admin', phone: '03005118159' });
   }
+  
   let vendor1 = await User.findOne({ email: 'vendor@grandmas.com' });
   if (!vendor1) {
     const hash = await bcrypt.hash('vendor123', 10);
     vendor1 = await User.create({ name: "Grandma's Kitchen", email: 'vendor@grandmas.com', password: hash, role: 'vendor', phone: '03005118159', whatsapp: '923005118159' });
   }
+  
   let vendor2 = await User.findOne({ email: 'vendor2@grandmas.com' });
   if (!vendor2) {
     const hash = await bcrypt.hash('vendor123', 10);
     vendor2 = await User.create({ name: "Auntie's Bakes", email: 'vendor2@grandmas.com', password: hash, role: 'vendor', phone: '03335160869', whatsapp: '923335160869' });
   }
+  
   const count = await MenuItem.countDocuments();
   if (count === 0) {
     const items = [
