@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Heart, Star, Users, Clock, ShieldCheck, 
+  Heart, Users, Clock, ShieldCheck, 
   ArrowRight, Mail, Phone, ChefHat, ShoppingBag, Truck
 } from 'lucide-react';
 
