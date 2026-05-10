@@ -13,7 +13,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow no-origin (mobile apps, curl, postman)
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
 
     const allowed = [
@@ -22,21 +22,26 @@ app.use(cors({
       'https://grand-ma-s-corner-git-main-fatimarana50s-projects.vercel.app'
     ];
 
-    // allow if origin starts with your Vercel app
     const isAllowed =
       allowed.includes(origin) ||
       origin.includes('grand-ma-s-corner') ||
       origin.endsWith('.vercel.app');
 
     if (isAllowed) {
-      callback(null, true);
+      callback(null, true); // ✅ Allow this origin
     } else {
-      console.log("Blocked origin:", origin);
-      callback(null, true); // temporary permissive mode
+      callback(new Error('Not allowed by CORS')); // ❌ Reject this origin
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Enable preflight for all routes
+app.options('*', cors());
+
+app.use(express.json());
 app.use(express.json());
 
 app.use('/uploads', express.static('uploads'));
