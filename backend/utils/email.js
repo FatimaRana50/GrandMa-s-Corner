@@ -25,23 +25,38 @@ const wrap = (content) => `<!DOCTYPE html><html><body style="margin:0;background
 </div></body></html>`;
 
 async function sendEmail({ to, subject, html }) {
+  console.log('=== EMAIL DEBUG START ===');
+  console.log('📧 SMTP_USER:', process.env.SMTP_USER ? '✅ SET' : '❌ NOT SET');
+  console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'smtp.gmail.com');
+  console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || '587');
+  console.log('📧 Recipient:', to);
+  console.log('📧 Subject:', subject);
+  
   if (!process.env.SMTP_USER) { 
     console.log(`[EMAIL SIM] To:${to} | ${subject}`); 
+    console.log('=== EMAIL DEBUG END (SIM MODE) ===');
     return true; 
   }
   try { 
+    console.log(`📧 Creating transporter...`);
     const transporter = getTransporter();
-    await transporter.sendMail({ 
+    
+    console.log(`📧 Attempting to send email...`);
+    const info = await transporter.sendMail({ 
       from: `"Grandma's Corner" <${process.env.SMTP_USER}>`, 
       to, 
       subject, 
       html 
     }); 
-    console.log(`✅ Email sent to ${to}`);
+    console.log(`✅ Email successfully sent to ${to}`);
+    console.log(`📧 Message ID: ${info.messageId}`);
+    console.log('=== EMAIL DEBUG END (SUCCESS) ===');
     return true; 
   }
   catch (err) { 
-    console.error('❌ Email error:', err.message); 
+    console.error('=== EMAIL DEBUG END (ERROR) ===');
+    console.error('❌ CRITICAL Email error:', err.message);
+    console.error('Full error object:', err);
     return false; 
   }
 }
