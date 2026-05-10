@@ -1,50 +1,55 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-// 🔴 CORS MUST come FIRST - before all other middleware and routes
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, postman)
-    if (!origin) return callback(null, true);
-
-    const allowed = [
+// 🔴 MANUAL CORS HEADERS - FIRST middleware (NO cors package needed)
+app.use((req, res, next) => {
+  try {
+    const origin = req.headers.origin;
+    
+    // Whitelist - allow these origins
+    const whitelist = [
       'http://localhost:3000',
       'http://localhost:5173',
       'https://grand-ma-s-corner-git-main-fatimarana50s-projects.vercel.app',
       'https://grand-ma-s-corner.vercel.app'
     ];
 
-    // Check if origin is in allowed list OR matches pattern
-    const isAllowed =
-      allowed.includes(origin) ||
-      origin.includes('grand-ma-s-corner') ||
+    // Check if origin is whitelisted OR is a Vercel preview
+    const isAllowed = !origin || 
+      whitelist.includes(origin) || 
+      origin.includes('grand-ma-s-corner') || 
       origin.endsWith('.vercel.app');
 
     if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
     }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
-}));
 
-// Handle preflight requests for all routes
-app.options('*', cors());
+    // Handle preflight (OPTIONS) requests
+    if (req.method === 'OPTIONS') {
+      console.log(`✅ Preflight OK for ${origin} → ${req.path}`);
+      return res.sendStatus(200);
+    }
 
-// Parse JSON bodies AFTER CORS
+    next();
+  } catch (error) {
+    console.error('❌ CORS Middleware Error:', error);
+    res.status(500).json({ error: 'CORS middleware error' });
+  }
+});
+
+// Parse JSON - AFTER CORS
 app.use(express.json());
 
 // Static files
 app.use('/uploads', express.static('uploads'));
 
-// Routes
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/orders', require('./routes/orders'));
@@ -55,10 +60,10 @@ app.use('/api/ai', require('./routes/ai'));
 // Models
 require('./models/PasswordReset');
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Connect to MongoDB
+// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('MongoDB connected');
@@ -71,7 +76,7 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1); 
   });
 
-// Seed database
+// Database Seeding
 async function seedDatabase() {
   const MenuItem = require('./models/MenuItem');
   const User = require('./models/User');
