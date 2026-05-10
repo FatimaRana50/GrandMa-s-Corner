@@ -3,10 +3,10 @@ const nodemailer = require('nodemailer');
 // Create transporter dynamically to get fresh env vars
 function getTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
+    host: process.env.SMTP_HOST || 'smtp.resend.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
     secure: true,
-    auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' },
+    auth: { user: process.env.SMTP_USER || 'resend', pass: process.env.SMTP_PASS || '' },
   });
 }
 
@@ -26,38 +26,39 @@ const wrap = (content) => `<!DOCTYPE html><html><body style="margin:0;background
 
 async function sendEmail({ to, subject, html }) {
   console.log('=== EMAIL DEBUG START ===');
-  console.log('📧 SMTP_USER:', process.env.SMTP_USER ? '✅ SET' : '❌ NOT SET');
-  console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'smtp.gmail.com');
-  console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || '587');
+  console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'smtp.resend.com');
+  console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || '465');
+  console.log('📧 SMTP_USER:', process.env.SMTP_USER || 'resend');
+  console.log('📧 SMTP_PASS:', process.env.SMTP_PASS ? '✅ SET' : '❌ NOT SET');
   console.log('📧 Recipient:', to);
   console.log('📧 Subject:', subject);
-  
-  if (!process.env.SMTP_USER) { 
-    console.log(`[EMAIL SIM] To:${to} | ${subject}`); 
+
+  if (!process.env.SMTP_PASS) {
+    console.log(`[EMAIL SIM] To:${to} | ${subject}`);
     console.log('=== EMAIL DEBUG END (SIM MODE) ===');
-    return true; 
+    return true;
   }
-  try { 
-    console.log(`📧 Creating transporter...`);
+
+  try {
+    console.log('📧 Creating transporter...');
     const transporter = getTransporter();
-    
-    console.log(`📧 Attempting to send email...`);
-    const info = await transporter.sendMail({ 
-      from: `"Grandma's Corner" <${process.env.SMTP_USER}>`, 
-      to, 
-      subject, 
-      html 
-    }); 
+
+    console.log('📧 Attempting to send email...');
+    const info = await transporter.sendMail({
+      from: '"Grandma\'s Corner" <onboarding@resend.dev>',
+      to,
+      subject,
+      html
+    });
     console.log(`✅ Email successfully sent to ${to}`);
     console.log(`📧 Message ID: ${info.messageId}`);
     console.log('=== EMAIL DEBUG END (SUCCESS) ===');
-    return true; 
-  }
-  catch (err) { 
+    return true;
+  } catch (err) {
     console.error('=== EMAIL DEBUG END (ERROR) ===');
     console.error('❌ CRITICAL Email error:', err.message);
     console.error('Full error object:', err);
-    return false; 
+    return false;
   }
 }
 
