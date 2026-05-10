@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Heart, Star, Users, Clock, ShieldCheck, 
-  ArrowRight, Mail, Phone, MapPin, ChefHat, ShoppingBag, Truck
+  ArrowRight, Mail, Phone, ChefHat, ShoppingBag, Truck
 } from 'lucide-react';
 
 export default function About() {
@@ -58,7 +58,6 @@ export default function About() {
       {/* ================= HOW THE MAGIC HAPPENS (Atmospheric Background) ================= */}
       <section style={{ 
         padding: '120px 0', position: 'relative', overflow: 'hidden', 
-        backgroundAttachment: 'fixed',
         backgroundImage: `linear-gradient(rgba(31, 22, 16, 0.85), rgba(31, 22, 16, 0.85)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070')`,
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed'
       }}>

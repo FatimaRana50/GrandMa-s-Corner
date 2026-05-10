@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -36,23 +36,23 @@ export default function VendorDashboard() {
   const [newItem, setNewItem] = useState({ name: '', price: '', unit: '', category: 'frozen', description: '', imageFile: null });
   const [showNewItem, setShowNewItem] = useState(false);
 
-  const loadOrders = () => api.get('/orders').then(r => setOrders(r.data));
-  const loadMenu = () => api.get('/menu?vendor=' + user._id).then(r => setMenuItems(r.data));
-  const loadReviews = async () => {
+  const loadOrders = useCallback(() => api.get('/orders').then(r => setOrders(r.data)), []);
+  const loadMenu = useCallback(() => api.get('/menu?vendor=' + user._id).then(r => setMenuItems(r.data)), [user?._id]);
+  const loadReviews = useCallback(async () => {
     if (!user?._id) return;
     try {
       const { data } = await api.get(`/reviews/vendor/${user._id}`);
       setReviews(data.reviews);
       setAvgRating(data.avgRating);
     } catch {}
-  };
+  }, [user?._id]);
 
   useEffect(() => {
     if (!user?._id) return;
     Promise.all([loadOrders(), loadMenu(), loadReviews()]).finally(() => setLoading(false));
     const interval = setInterval(loadOrders, 30000);
     return () => clearInterval(interval);
-  }, [user?._id]);
+  }, [user?._id, loadOrders, loadMenu, loadReviews]);
 
   const updateStatus = async (orderId, status) => {
     try {

@@ -6,14 +6,13 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { 
   ShoppingBag, Trash2, Plus, Minus, MapPin, Phone, 
-  MessageCircle, CreditCard, Truck, Coffee, Sparkles,
+  MessageCircle, CreditCard, Truck,
   CheckCircle, ArrowLeft, ShoppingCart, Gift, Clock,
   FileText, Send, Heart
 } from 'lucide-react';
 
 // Reliable food background images from free CDN
 const FOOD_BG = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop';
-const SECONDARY_BG = 'https://images.pexels.com/photos/6287765/pexels-photo-6287765.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop';
 
 export default function Cart() {
   const { cart, updateQty, removeItem, total, clearCart } = useCart();
