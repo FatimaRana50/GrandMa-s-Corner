@@ -2,21 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { 
-  ShoppingBag, Clock, CheckCircle, Truck, Coffee, 
+import {
+  ShoppingBag, Clock, CheckCircle, Truck, Coffee,
   Star, MessageCircle, XCircle, Calendar,
   MapPin, Phone, FileText, CreditCard,
-  Package, Utensils, Award, Sparkles, ChevronDown, ChevronUp
+  Package, Utensils, Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'delivered'];
 const STATUS_LABELS = { pending: 'Pending', confirmed: 'Confirmed', preparing: 'Preparing', ready: 'Ready!', delivered: 'Delivered', cancelled: 'Cancelled' };
-const STATUS_ICONS = { 
-  pending: <Clock size={14} />, 
-  confirmed: <CheckCircle size={14} />, 
-  preparing: <ChefHat size={14} />, 
-  ready: <Truck size={14} />, 
-  delivered: <Package size={14} /> 
+const STATUS_ICONS = {
+  pending: <Clock size={18} />,
+  confirmed: <CheckCircle size={18} />,
+  preparing: <Utensils size={18} />,
+  ready: <Truck size={18} />,
+  delivered: <Package size={18} />,
 };
 const STATUS_COLORS = {
   pending: '#f4a7bb',
@@ -27,9 +27,11 @@ const STATUS_COLORS = {
   cancelled: '#ddd'
 };
 
-// Helper component for ChefHat since it wasn't imported
-function ChefHat({ size, color }) {
-  return <span style={{ fontSize: size, color: color }}>👨‍🍳</span>;
+// Subtle, free-to-use food photo from Unsplash (warm tones, fits theme)
+const FOOD_BG = 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?auto=format&fit=crop&w=1920&q=70';
+
+function ChefHat({ size = 14 }) {
+  return <span style={{ fontSize: size + 2, lineHeight: 1 }}>👨‍🍳</span>;
 }
 
 function StarRating({ value, onChange, readonly }) {
@@ -37,24 +39,19 @@ function StarRating({ value, onChange, readonly }) {
   return (
     <div style={{ display: 'flex', gap: 6 }}>
       {[1, 2, 3, 4, 5].map(s => (
-        <button
+        <span
           key={s}
-          type="button"
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: 32,
-            cursor: readonly ? 'default' : 'pointer',
-            color: s <= (hover || value) ? '#f9b733' : '#e0e0e0',
-            transition: 'transform 0.1s ease',
-            padding: 0
-          }}
           onClick={() => !readonly && onChange(s)}
           onMouseEnter={() => !readonly && setHover(s)}
           onMouseLeave={() => !readonly && setHover(0)}
-        >
-          ★
-        </button>
+          style={{
+            fontSize: 32,
+            cursor: readonly ? 'default' : 'pointer',
+            color: (hover || value) >= s ? '#f4a7bb' : '#e8e0d5',
+            transition: 'transform 0.15s, color 0.15s',
+            transform: hover === s ? 'scale(1.2)' : 'scale(1)',
+          }}
+        >★</span>
       ))}
     </div>
   );
@@ -64,7 +61,6 @@ function ReviewModal({ order, onClose, onSubmit }) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
-
   const ratingTexts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent!'];
   const ratingEmojis = ['', '😞', '😐', '🙂', '😊', '🤩'];
 
@@ -81,56 +77,61 @@ function ReviewModal({ order, onClose, onSubmit }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: 20
-    }} onClick={onClose}>
-      <div style={{
-        background: '#fff', borderRadius: 32, maxWidth: 500, width: '100%',
-        padding: 32, position: 'relative', boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(61,43,31,0.55)',
+        backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', zIndex: 1000, padding: 20,
+        animation: 'fadeIn 0.25s ease-out'
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: 28, padding: 32, maxWidth: 480, width: '100%',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)', animation: 'popIn 0.35s cubic-bezier(.2,.9,.3,1.2)'
+        }}
+      >
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
-            width: 70, height: 70, background: '#fff3e0', borderRadius: 35,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 16px'
+            width: 64, height: 64, margin: '0 auto 12px', borderRadius: 32,
+            background: 'linear-gradient(135deg,#fce38a,#f4a7bb)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <Award size={40} color="#f4a7bb" />
+            <Sparkles size={28} color="#fff" />
           </div>
-          <h3 style={{ fontSize: 26, fontFamily: "'Playfair Display', serif", color: '#3d2b1f', marginBottom: 8 }}>Love What You Ate?</h3>
-          <p style={{ color: '#888', fontSize: 14 }}>
+          <h2 style={{ fontSize: 24, color: '#3d2b1f', margin: '0 0 6px', fontFamily: "'Playfair Display', serif" }}>Love What You Ate?</h2>
+          <div style={{ fontSize: 13, color: '#888' }}>
             Order #{order._id.slice(-6).toUpperCase()} · {order.vendor?.name}
-          </p>
+          </div>
         </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: '#666', marginBottom: 12, textAlign: 'center' }}>
-            How was your experience?
-          </div>
-          <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#666', marginBottom: 12 }}>How was your experience?</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             <StarRating value={rating} onChange={setRating} />
-            {rating > 0 && (
-              <div style={{ marginTop: 12, fontSize: 18, fontWeight: 600, color: '#f9b733' }}>
-                {ratingEmojis[rating]} {ratingTexts[rating]}
-              </div>
-            )}
           </div>
+          {rating > 0 && (
+            <div style={{ marginTop: 10, fontSize: 14, color: '#3d2b1f', fontWeight: 500 }}>
+              {ratingEmojis[rating]} {ratingTexts[rating]}
+            </div>
+          )}
         </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#3d2b1f', marginBottom: 8 }}>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#666', marginBottom: 8 }}>
             Share your thoughts (optional)
           </label>
           <textarea
             value={comment}
             onChange={e => setComment(e.target.value)}
             rows={4}
-            placeholder="What did you love? Any suggestions for improvement?"
+            placeholder="What did you love? Any suggestions?"
             style={{
               width: '100%', padding: 12, borderRadius: 16, border: '1px solid #e8e0d5',
-              fontFamily: 'inherit', fontSize: 14, resize: 'vertical'
+              fontFamily: 'inherit', fontSize: 14, resize: 'vertical', boxSizing: 'border-box',
+              outline: 'none'
             }}
           />
         </div>
@@ -159,7 +160,7 @@ function ReviewModal({ order, onClose, onSubmit }) {
   );
 }
 
-function OrderCard({ order, onCancel, onReview }) {
+function OrderCard({ order, onCancel, onReview, index }) {
   const [open, setOpen] = useState(false);
   const [reviewed, setReviewed] = useState(false);
   const [checkingReview, setCheckingReview] = useState(false);
@@ -175,23 +176,31 @@ function OrderCard({ order, onCancel, onReview }) {
   const whatsappVendor = () => {
     const num = order.vendor?.whatsapp || order.vendor?.phone?.replace(/[^0-9]/g, '');
     if (!num) { toast.error('Vendor WhatsApp not available'); return; }
-    const msg = encodeURIComponent(`Hi! I'm reaching out regarding Order #${order._id.slice(-6).toUpperCase()} placed on Grandma's Corner. Could you please provide an update?`);
+    const msg = encodeURIComponent(`Hi! I'm reaching out regarding Order #${order._id.slice(-6).toUpperCase()} placed on Grandma's Corner.`);
     window.open(`https://wa.me/${num.replace(/^0/, '92')}?text=${msg}`, '_blank');
   };
 
   return (
-    <div style={{
-      background: '#fff', borderRadius: 24, marginBottom: 20,
-      padding: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-      border: '1px solid #f0e8dc', transition: 'all 0.2s ease'
-    }}>
+    <div
+      className="order-card"
+      style={{
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
+        borderRadius: 24, marginBottom: 20, padding: 20,
+        boxShadow: '0 4px 20px rgba(61,43,31,0.06)',
+        border: '1px solid #f0e8dc',
+        animation: `slideUp 0.5s ease-out both`,
+        animationDelay: `${index * 0.07}s`
+      }}
+    >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{
               width: 8, height: 8, borderRadius: 4,
-              background: STATUS_COLORS[order.status] || '#ddd'
+              background: STATUS_COLORS[order.status] || '#ddd',
+              boxShadow: `0 0 0 4px ${STATUS_COLORS[order.status]}30`,
+              animation: order.status !== 'delivered' && order.status !== 'cancelled' ? 'pulse 2s infinite' : 'none'
             }} />
             <span style={{ fontWeight: 700, fontSize: 16, color: '#3d2b1f' }}>
               #{order._id.slice(-6).toUpperCase()}
@@ -215,8 +224,8 @@ function OrderCard({ order, onCancel, onReview }) {
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '4px 12px', borderRadius: 20,
-            background: `${STATUS_COLORS[order.status]}20`,
-            color: STATUS_COLORS[order.status]?.replace(/^#/, '') === 'ddd' ? '#666' : '#3d2b1f',
+            background: `${STATUS_COLORS[order.status]}30`,
+            color: '#3d2b1f',
             fontSize: 12, fontWeight: 600
           }}>
             {STATUS_ICONS[order.status]}
@@ -230,7 +239,7 @@ function OrderCard({ order, onCancel, onReview }) {
             style={{
               background: '#f5f2ed', border: 'none', padding: '8px 16px',
               borderRadius: 30, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6
+              display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s'
             }}
           >
             {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -254,7 +263,9 @@ function OrderCard({ order, onCancel, onReview }) {
                     borderRadius: 40, display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: isActive ? '#fff' : '#bbb',
                     position: 'relative', zIndex: 2,
-                    boxShadow: isCurrent ? '0 0 0 3px rgba(61,43,31,0.2)' : 'none'
+                    boxShadow: isCurrent ? '0 0 0 4px rgba(61,43,31,0.15)' : 'none',
+                    animation: isCurrent ? 'bounce 2s ease-in-out infinite' : 'none',
+                    transition: 'background 0.4s'
                   }}>
                     {isActive && i < statusIdx ? <CheckCircle size={20} /> : STATUS_ICONS[s]}
                   </div>
@@ -262,29 +273,31 @@ function OrderCard({ order, onCancel, onReview }) {
                     {STATUS_LABELS[s]}
                   </div>
                   {isCurrent && order.status === 'ready' && (
-                    <div style={{ fontSize: 10, color: '#f4a7bb' }}>Ready for pickup!</div>
+                    <div style={{ fontSize: 10, color: '#f4a7bb', fontWeight: 600 }}>Ready for pickup!</div>
                   )}
                 </div>
               );
             })}
           </div>
-          {/* Progress bar */}
           <div style={{
             position: 'absolute', top: 20, left: '8%', right: '8%',
-            height: 2, background: '#f0f0f0', zIndex: 0
+            height: 3, background: '#f0e8dc', zIndex: 0, borderRadius: 2, overflow: 'hidden'
           }}>
             <div style={{
               width: `${(statusIdx / (STATUSES.length - 1)) * 100}%`,
-              height: 2, background: '#3d2b1f', transition: 'width 0.3s ease'
+              height: '100%',
+              background: 'linear-gradient(90deg,#f4a7bb,#fce38a,#b8e1d4)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 3s linear infinite',
+              transition: 'width 0.6s ease'
             }} />
           </div>
         </div>
       )}
 
-      {/* Expanded Details */}
+      {/* Expanded */}
       {open && (
-        <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f0e8dc' }}>
-          {/* Items */}
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f0e8dc', animation: 'fadeIn 0.3s' }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Utensils size={16} color="#f4a7bb" />
@@ -311,41 +324,23 @@ function OrderCard({ order, onCancel, onReview }) {
             </div>
           </div>
 
-          {/* Delivery Info Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#faf8f5', borderRadius: 12 }}>
-              <MapPin size={18} color="#f4a7bb" />
-              <div style={{ fontSize: 13 }}>
-                <div style={{ fontWeight: 500 }}>Delivery Address</div>
-                <div style={{ color: '#666' }}>{order.deliveryAddress}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#faf8f5', borderRadius: 12 }}>
-              <Phone size={18} color="#f4a7bb" />
-              <div style={{ fontSize: 13 }}>
-                <div style={{ fontWeight: 500 }}>Contact</div>
-                <div style={{ color: '#666' }}>{order.phone}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#faf8f5', borderRadius: 12 }}>
-              <CreditCard size={18} color="#f4a7bb" />
-              <div style={{ fontSize: 13 }}>
-                <div style={{ fontWeight: 500 }}>Payment</div>
-                <div style={{ color: '#666' }}>{order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card Payment'}</div>
-              </div>
-            </div>
-            {order.notes && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#faf8f5', borderRadius: 12 }}>
-                <FileText size={18} color="#f4a7bb" />
+            {[
+              { icon: <MapPin size={18} color="#f4a7bb" />, label: 'Delivery Address', value: order.deliveryAddress },
+              { icon: <Phone size={18} color="#f4a7bb" />, label: 'Contact', value: order.phone },
+              { icon: <CreditCard size={18} color="#f4a7bb" />, label: 'Payment', value: order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card Payment' },
+              ...(order.notes ? [{ icon: <FileText size={18} color="#f4a7bb" />, label: 'Special Notes', value: order.notes }] : [])
+            ].map((info, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#faf8f5', borderRadius: 12 }}>
+                {info.icon}
                 <div style={{ fontSize: 13 }}>
-                  <div style={{ fontWeight: 500 }}>Special Notes</div>
-                  <div style={{ color: '#666' }}>{order.notes}</div>
+                  <div style={{ fontWeight: 500 }}>{info.label}</div>
+                  <div style={{ color: '#666' }}>{info.value}</div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
 
-          {/* Action Buttons */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button
               onClick={whatsappVendor}
@@ -357,7 +352,7 @@ function OrderCard({ order, onCancel, onReview }) {
             >
               <MessageCircle size={16} /> Chat with Vendor
             </button>
-            
+
             {order.status === 'pending' && (
               <button
                 onClick={() => onCancel(order._id)}
@@ -370,20 +365,21 @@ function OrderCard({ order, onCancel, onReview }) {
                 <XCircle size={16} /> Cancel Order
               </button>
             )}
-            
+
             {order.status === 'delivered' && !checkingReview && !reviewed && (
               <button
                 onClick={() => onReview(order)}
                 style={{
-                  padding: '10px 20px', background: '#fef3cd', color: '#b7791f', border: 'none',
-                  borderRadius: 40, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  padding: '10px 20px', background: 'linear-gradient(135deg,#fef3cd,#fce38a)',
+                  color: '#b7791f', border: 'none',
+                  borderRadius: 40, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 8
                 }}
               >
                 <Star size={16} /> Rate Your Meal
               </button>
             )}
-            
+
             {order.status === 'delivered' && reviewed && (
               <span style={{
                 padding: '10px 20px', background: '#e8f5e9', color: '#2e7d32', borderRadius: 40,
@@ -407,6 +403,11 @@ export default function Orders() {
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.body.classList.add('orders-route');
+    return () => document.body.classList.remove('orders-route');
+  }, []);
+
   const load = () => api.get('/orders/my').then(r => { setOrders(r.data); setLoading(false); });
   useEffect(() => { load(); }, [refresh]);
 
@@ -423,123 +424,228 @@ export default function Orders() {
     pending: orders.filter(o => o.status === 'pending').length
   };
 
+  const floatingEmojis = ['🍪', '☕', '🥐', '🍰', '🥧', '🧁'];
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F5 0%, #FAF4EA 100%)' }}>
-      {/* Background Pattern */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 30c0-1.1.9-2 2-2h8a2 2 0 0 1 0 4h-8a2 2 0 0 1-2-2z' fill='%23f4a7bb' fill-opacity='0.03'/%3E%3C/svg%3E")`,
-        pointerEvents: 'none', zIndex: 0
-      }} />
+    <>
+      <div style={{ minHeight: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {/* Food background image */}
+        <div style={{
+          position: 'fixed', inset: 0,
+          backgroundImage: `url(${FOOD_BG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(2px)',
+          transform: 'scale(1.05)',
+          zIndex: 0
+        }} />
+        {/* Warm gradient overlay to keep theme */}
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'linear-gradient(135deg, rgba(255,249,245,0.94) 0%, rgba(250,244,234,0.96) 50%, rgba(244,167,187,0.18) 100%)',
+          zIndex: 0
+        }} />
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
-        {/* Hero Section */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{
-            width: 80, height: 80, background: '#fff', borderRadius: 40,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 20px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
-          }}>
-            <Coffee size={36} color="#f4a7bb" />
+        {/* Floating food emojis */}
+        {floatingEmojis.map((emoji, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'fixed',
+              left: `${(i * 17 + 8) % 90}%`,
+              top: `${(i * 23 + 10) % 80}%`,
+              fontSize: 28 + (i % 3) * 6,
+              opacity: 0.18,
+              zIndex: 0,
+              animation: `float ${8 + i}s ease-in-out infinite`,
+              animationDelay: `${i * 0.6}s`,
+              pointerEvents: 'none'
+            }}
+          >
+            {emoji}
           </div>
-          <h1 style={{
-            fontSize: 38, fontFamily: "'Playfair Display', serif",
-            color: '#3d2b1f', marginBottom: 12, fontWeight: 700
-          }}>
-            Your Orders
-          </h1>
-          <p style={{ color: '#888', fontSize: 15, maxWidth: 450, margin: '0 auto' }}>
-            Track your delicious journey with us
-          </p>
-        </div>
+        ))}
 
-        {/* Stats Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: 20, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f0e8dc' }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#3d2b1f' }}>{stats.total}</div>
-            <div style={{ fontSize: 13, color: '#888' }}>Total Orders</div>
-          </div>
-          <div style={{ background: '#fff', borderRadius: 20, padding: 20, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f0e8dc' }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#c5e0b4' }}>{stats.delivered}</div>
-            <div style={{ fontSize: 13, color: '#888' }}>Delivered 🎉</div>
-          </div>
-          <div style={{ background: '#fff', borderRadius: 20, padding: 20, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #f0e8dc' }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#f4a7bb' }}>{stats.pending}</div>
-            <div style={{ fontSize: 13, color: '#888' }}>In Progress</div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {[
-            { value: 'all', label: 'All Orders', icon: <ShoppingBag size={14} /> },
-            { value: 'pending', label: 'Pending', icon: <Clock size={14} /> },
-            { value: 'confirmed', label: 'Confirmed', icon: <CheckCircle size={14} /> },
-            { value: 'preparing', label: 'Preparing', icon: <ChefHat size={14} /> },
-            { value: 'ready', label: 'Ready', icon: <Truck size={14} /> },
-            { value: 'delivered', label: 'Delivered', icon: <Package size={14} /> }
-          ].map(f => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px',
-                background: filter === f.value ? '#3d2b1f' : '#fff',
-                color: filter === f.value ? '#fff' : '#666',
-                border: filter === f.value ? 'none' : '1px solid #e0d5ca',
-                borderRadius: 40, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {f.icon} {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Orders List */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 80 }}>
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, width: '100%' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px 80px' }}>
+          {/* Hero */}
+          <div style={{ textAlign: 'center', marginBottom: 40, animation: 'slideUp 0.6s ease-out' }}>
             <div style={{
-              width: 60, height: 60, border: '3px solid #f0e8dc',
-              borderTopColor: '#f4a7bb', borderRadius: '50%',
-              animation: 'spin 1s linear infinite', margin: '0 auto 20px'
-            }} />
-            <div style={{ color: '#888' }}>Loading your orders...</div>
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: 80, background: '#fff', borderRadius: 32,
-            border: '1px solid #f0e8dc'
-          }}>
-            <div style={{
-              width: 100, height: 100, background: '#faf8f5', borderRadius: 50,
+              width: 88, height: 88,
+              background: 'linear-gradient(135deg,#fff,#faf4ea)',
+              borderRadius: 44,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 20px'
+              margin: '0 auto 20px',
+              boxShadow: '0 12px 40px rgba(244,167,187,0.3)',
+              animation: 'bounce 3s ease-in-out infinite'
             }}>
-              <ShoppingBag size={48} color="#ddd" />
+              <Coffee size={40} color="#f4a7bb" />
             </div>
-            <h3 style={{ fontSize: 20, color: '#3d2b1f', marginBottom: 8 }}>No orders yet</h3>
-            <p style={{ color: '#888', marginBottom: 24 }}>Ready to satisfy your cravings?</p>
-            <button style={{
-              background: '#3d2b1f', color: '#fff', border: 'none',
-              padding: '12px 28px', borderRadius: 40, fontWeight: 600,
-              cursor: 'pointer'
-            }} onClick={() => navigate('/menu')}>
-              Explore Menu →
-            </button>
+            <h1 style={{
+              fontSize: 42, fontFamily: "'Playfair Display', serif",
+              color: '#3d2b1f', marginBottom: 12, fontWeight: 700, letterSpacing: '-0.5px'
+            }}>
+              Your Orders
+            </h1>
+            <p style={{ color: '#7a6a5a', fontSize: 15, maxWidth: 450, margin: '0 auto' }}>
+              Track your delicious journey with us ✨
+            </p>
           </div>
-        ) : (
-          filteredOrders.map(o => <OrderCard key={o._id} order={o} onCancel={cancel} onReview={setReviewOrder} />)
-        )}
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
+            {[
+              { value: stats.total, label: 'Total Orders', color: '#3d2b1f' },
+              { value: stats.delivered, label: 'Delivered 🎉', color: '#7cb342' },
+              { value: stats.pending, label: 'In Progress', color: '#f4a7bb' }
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="stat-card"
+                style={{
+                  background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
+                  borderRadius: 20, padding: 22, textAlign: 'center',
+                  boxShadow: '0 4px 20px rgba(61,43,31,0.06)', border: '1px solid #f0e8dc',
+                  animation: `slideUp 0.5s ease-out both`, animationDelay: `${0.1 + i * 0.1}s`,
+                  transition: 'transform 0.25s, box-shadow 0.25s'
+                }}
+              >
+                <div style={{ fontSize: 34, fontWeight: 700, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 13, color: '#888' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[
+              { value: 'all', label: 'All', icon: <ShoppingBag size={14} /> },
+              { value: 'pending', label: 'Pending', icon: <Clock size={14} /> },
+              { value: 'confirmed', label: 'Confirmed', icon: <CheckCircle size={14} /> },
+              { value: 'preparing', label: 'Preparing', icon: <ChefHat size={14} /> },
+              { value: 'ready', label: 'Ready', icon: <Truck size={14} /> },
+              { value: 'delivered', label: 'Delivered', icon: <Package size={14} /> }
+            ].map(f => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px',
+                  background: filter === f.value ? '#3d2b1f' : 'rgba(255,255,255,0.85)',
+                  color: filter === f.value ? '#fff' : '#666',
+                  border: filter === f.value ? 'none' : '1px solid #e0d5ca',
+                  borderRadius: 40, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.25s',
+                  boxShadow: filter === f.value ? '0 6px 18px rgba(61,43,31,0.25)' : 'none',
+                  transform: filter === f.value ? 'translateY(-1px)' : 'none'
+                }}
+              >
+                {f.icon} {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* List */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 80 }}>
+              <div style={{
+                width: 60, height: 60, border: '3px solid #f0e8dc',
+                borderTopColor: '#f4a7bb', borderRadius: '50%',
+                animation: 'spin 1s linear infinite', margin: '0 auto 20px'
+              }} />
+              <div style={{ color: '#888' }}>Loading your orders...</div>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: 80,
+              background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
+              borderRadius: 32, border: '1px solid #f0e8dc',
+              animation: 'slideUp 0.5s ease-out'
+            }}>
+              <div style={{
+                width: 100, height: 100, background: '#faf8f5', borderRadius: 50,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 20px'
+              }}>
+                <ShoppingBag size={48} color="#ddd" />
+              </div>
+              <h3 style={{ fontSize: 20, color: '#3d2b1f', marginBottom: 8 }}>No orders yet</h3>
+              <p style={{ color: '#888', marginBottom: 24 }}>Ready to satisfy your cravings?</p>
+              <button style={{
+                background: '#3d2b1f', color: '#fff', border: 'none',
+                padding: '12px 28px', borderRadius: 40, fontWeight: 600,
+                cursor: 'pointer', boxShadow: '0 8px 20px rgba(61,43,31,0.25)'
+              }} onClick={() => navigate('/menu')}>
+                Explore Menu →
+              </button>
+            </div>
+          ) : (
+            filteredOrders.map((o, i) => <OrderCard key={o._id} order={o} index={i} onCancel={cancel} onReview={setReviewOrder} />)
+          )}
+          </div>
+
+        {reviewOrder && <ReviewModal order={reviewOrder} onClose={() => setReviewOrder(null)} onSubmit={() => setRefresh(r => r + 1)} />}
+
+        <style>{`
+          body.orders-route {
+            min-height: 100vh;
+          }
+          body.orders-route #root {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+          body.orders-route main {
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
+          }
+          body.orders-route main > * {
+            flex: 1 0 auto;
+            width: 100%;
+          }
+          body.orders-route footer {
+            position: relative;
+            z-index: 20;
+            margin-top: 0 !important;
+            flex-shrink: 0;
+            opacity: 1;
+          }
+          body.orders-route footer * {
+            opacity: 1;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+          }
+          @keyframes float {
+            0%, 100% { transform: translate(0,0) rotate(0deg); }
+            50% { transform: translate(15px,-25px) rotate(10deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(244,167,187,0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(244,167,187,0.1); }
+          }
+          @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+          }
+          .order-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(61,43,31,0.1) !important; transition: all 0.3s; }
+          .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(61,43,31,0.1) !important; }
+        `}</style>
       </div>
 
-      {reviewOrder && <ReviewModal order={reviewOrder} onClose={() => setReviewOrder(null)} onSubmit={() => setRefresh(r => r + 1)} />}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
+    </>
   );
 }
