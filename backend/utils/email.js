@@ -1,11 +1,14 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' },
-});
+// Create transporter dynamically to get fresh env vars
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' },
+  });
+}
 
 const TILES = 'CORNER'.split('').map((l,i)=>
   `<span style="display:inline-block;width:22px;height:22px;text-align:center;line-height:22px;font-weight:900;font-size:13px;background:${i%2===0?'#f4a7b9':'#f9e4a0'};border-radius:4px">${l}</span>`
@@ -22,9 +25,25 @@ const wrap = (content) => `<!DOCTYPE html><html><body style="margin:0;background
 </div></body></html>`;
 
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.SMTP_USER) { console.log(`[EMAIL SIM] To:${to} | ${subject}`); return true; }
-  try { await transporter.sendMail({ from: `"Grandma's Corner" <${process.env.SMTP_USER}>`, to, subject, html }); return true; }
-  catch (err) { console.error('Email error:', err.message); return false; }
+  if (!process.env.SMTP_USER) { 
+    console.log(`[EMAIL SIM] To:${to} | ${subject}`); 
+    return true; 
+  }
+  try { 
+    const transporter = getTransporter();
+    await transporter.sendMail({ 
+      from: `"Grandma's Corner" <${process.env.SMTP_USER}>`, 
+      to, 
+      subject, 
+      html 
+    }); 
+    console.log(`✅ Email sent to ${to}`);
+    return true; 
+  }
+  catch (err) { 
+    console.error('❌ Email error:', err.message); 
+    return false; 
+  }
 }
 
 async function sendOrderConfirmationToCustomer(order, customerEmail, customerName) {
