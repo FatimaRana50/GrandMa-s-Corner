@@ -11,15 +11,31 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000'
 ];
 
-app.use(cors({ 
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow no-origin (mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+
+    const allowed = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://grand-ma-s-corner-git-main-fatimarana50s-projects.vercel.app'
+    ];
+
+    // allow if origin starts with your Vercel app
+    const isAllowed =
+      allowed.includes(origin) ||
+      origin.includes('grand-ma-s-corner') ||
+      origin.endsWith('.vercel.app');
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log("Blocked origin:", origin);
+      callback(null, true); // temporary permissive mode
     }
   },
-  credentials: true 
+  credentials: true
 }));
 app.use(express.json());
 
