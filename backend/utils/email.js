@@ -2,10 +2,16 @@ const nodemailer = require('nodemailer');
 
 // Create transporter dynamically to get fresh env vars
 function getTransporter() {
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const secure = process.env.SMTP_SECURE
+    ? process.env.SMTP_SECURE === 'true'
+    : port === 465;
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: true,
+    port,
+    secure,
+    requireTLS: !secure,
     auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' },
   });
 }
@@ -29,6 +35,7 @@ async function sendEmail({ to, subject, html }) {
   console.log('📧 SMTP_USER:', process.env.SMTP_USER ? '✅ SET' : '❌ NOT SET');
   console.log('📧 SMTP_HOST:', process.env.SMTP_HOST || 'smtp.gmail.com');
   console.log('📧 SMTP_PORT:', process.env.SMTP_PORT || '587');
+  console.log('📧 SMTP_SECURE:', process.env.SMTP_SECURE || '(auto)');
   console.log('📧 Recipient:', to);
   console.log('📧 Subject:', subject);
   
